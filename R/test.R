@@ -1,6 +1,14 @@
 # test
 # What happens if I add a line?
-x <- seq(0,1,0.1)
-y <- seq(0,1,0.1)
-plot(x,y,main="plotje",col="red",pch=16)
 
+# Database connection
+install.packages("RMySQL")
+library(RMySQL)
+
+db <- dbConnect(RMySQL::MySQL(),
+                dbname = "company",
+                host="courses.csrrinzqubik.us-east-1.rds.amazonaws.com",
+                post=3306,
+                user="student",
+                password="datacamp"
+)

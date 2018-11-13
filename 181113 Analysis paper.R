@@ -145,16 +145,16 @@ for(k in 1:3){
 
 #-----------------------------------------------------------------------------------------------------------
 # Store data and generate Supplemental Information result tables 
-save.now<-FALSE
+save.now<-T
 if(save.now==T){
 
   # create file for pvalue analysis (p-value figure)
   save(pvallist,pvec,utlist,namelist,file="data/pvals.Rdata")
 
   # Create ST1 excel file (Supplemental Information) for Figures and Tables
-  sb <- sqrt(unlist(s2blist))
-  sw <- sqrt(unlist(s2wlist))
-  stau <- sqrt(unlist(s2taulist))
+  sigmab <- sqrt(unlist(s2blist))
+  sigmaeps <- sqrt(unlist(s2wlist))
+  sigmatime <- sqrt(unlist(s2taulist))
   fullnames <- unlist(namelist)
   panels <- c(rep("Metabolon",pvec[1]),rep("BMFL",pvec[2]),rep("SomaLogic",pvec[3]))
   samples <- c(rep("plasma",pvec[1]),rep("urine",pvec[2]),rep("plasma",pvec[3]))
@@ -171,10 +171,10 @@ if(save.now==T){
   stotmat[(cumsum(pvec)[2]+1):(cumsum(pvec)[3]),c(2,3,4,5,8,10,12)] <- unlist(slist[[3]])
 
 
-  ST1 <- data.frame(fullnames,panels,samples,coeftotmat,sb,stau,sw,stotmat)
-  colnames(ST1) <- c("compound","panel","sample","Age","BMI",totaltimes,"sigmab","sigma time","sigma w",paste("sigmat",totaltimes))
+  ST1 <- data.frame(fullnames,panels,samples,coeftotmat,sigmab,sigmatime,sigmaeps,stotmat)
+  colnames(ST1) <- c("compound","panel","sample","Age","BMI",totaltimes,"sigma_b","sigma_time","sigma_eps",paste("sigmat",totaltimes))
   #write.table(ST1,file="data/ST1.txt",na=" ",row.names=F,sep=";",dec=",",qmethod="double")
-  write_xlsx(ST1,"data/ST1new.xlsx")
+  write_xlsx(ST1,"data/ST1.xlsx")
 
 }
 

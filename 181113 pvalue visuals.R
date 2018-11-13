@@ -108,38 +108,3 @@ text(x=xc-0.05,y=yc+0.05,"0 %",cex=cx)
 text(x=xc+length(cols)*0.05+0.07,y=yc+0.05,"50 %",cex=cx)
 dev.off()
 
-
-
-#-----------------------------------------------------------------------------------------------------------
-# remove later
-#-----------------------------------------------------------------------------------------------------------
-pdf("Figures/Contrasts.pdf",width=20)
-par(mfrow=c(1,3))
-par(mar=c(6,8,6,2)+0.1)
-library(RColorBrewer)
-for(k in 1:3){
-  sm <- signiflist[[k]]
-  ni <- ncol(sm)
-  par(xpd=T)
-  plot(0:(nrow(sm)),0:(ncol(sm)),type="n",axes=F,xlab="",ylab="",main="")
-  for(r in 1:(ni-1)){
-    for(c in (r+1):(ni)){
-      polygon(x=c(-1.5+c,-0.5+c,-0.5+c,-1.5+c,-1.5+c),y=c(-0.5+r,-0.5+r,0.5+r,0.5+r,-0.5+r),col=
-                cols[sum( (0:10)/10 <= 2*sm[r,c]/pvec[k])])
-    }}
-  short.hrs <- sapply(colnames(sm),function(s)substr(s,1,nchar(s)-3))
-  title(paste0(histnames[k]," [",pvec[k],"]"),cex.main=4,line=3)
-  axis(side=1,short.hrs,at=0:(ni-1),tick=F,cex.axis=cx,line=-1,las=2)
-  axis(side=2,short.hrs,at=(1:ni),tick=F,las=1,line=1,cex.axis=cx)
-  
-  
-  # upper triangle numbers
-  for(r in 1:ni){
-    for(c in r:ni){
-      if(c!=r){text(x=r-1,y=c,sm[c,r],cex=cx-1)}
-      if(c==r){text(x=r-1,y=c,"-",cex=cx-1)}
-    }
-  }
-  
-  
-}

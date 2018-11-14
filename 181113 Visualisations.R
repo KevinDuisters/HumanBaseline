@@ -15,14 +15,14 @@
 library(readxl)
 library(ggplot2)
 
+
 #---------------------------------------------------------------------------------------------------------#
 # Load data (published set from Human Baseline Tool)
 ST1<-read_excel("data/ST1.xlsx")
 
 # General info
 #totaltimes <- c("-2 hr","-0.5 hr","0.5 hr","1.5 hr","3 hr","4 hr","4.5 hr","6 hr","8 hr","9.5 hr","11 hr","12 hr") # excl 24 hr
-#numtimes  <- c(-2,-0.5,0.5,1.5,3,4,4.5,6,8,9.5,11,12)
-#alpha <- 0.05
+
 
 
 
@@ -30,9 +30,18 @@ ST1<-read_excel("data/ST1.xlsx")
 
 # Figures Variance and subVariance (supplemental fig) 
 
+
+sub <- F;pdf("Figures/Variance.pdf",width=9)
+sub<-T;k = 1;pdf("Figures/subVariance1.pdf",width=9)
+sub<-T;k = 2;pdf("Figures/subVariance2.pdf",width=9)
+sub<-T;k = 3;pdf("Figures/subVariance3.pdf",width=9)
+
+
 # sort to make bubbles look nice on top of each other
-mysort <- c(which(ST1$panel=="SomaLogic"),which(ST1$panel=="Metabolon"),which(ST1$panel=="BMFL"))
-mylabs <- c("Proteins","Plasma Metabolon","Urine BMFL")
+panelnames <- c("SomaLogic","Metabolon","BMFL")
+mysort <- c(which(ST1$panel==(panelnames[1])),which(ST1$panel==(panelnames[2])),which(ST1$panel==(panelnames[3])))
+mylabs <- c("Plasma Proteins","Plasma Metabolon","Urine Amines")
+if(sub==F){dynamictitle<-""}else{dynamictitle<-paste0(mylabs[k]," [",sum(ST1$panel==(panelnames[k])),"]")} # plot title
 mycols <- c("lightblue","white","navy") # rgb Leiden Univ color #rgb(0,17,88,maxColorValue = 255)
 Platform <- numeric(length(ST1$panel))
 Platform[which(ST1$panel=="SomaLogic")] <- 1
@@ -42,15 +51,15 @@ Platform <- Platform[mysort]
 Platform <- factor(Platform,levels=c(1,2,3),labels=mylabs)
 
 
+mysb <- ST1$sigma_b[mysort] + (sub==T)*(Platform!=mylabs[k])*100 # move VCs not in subplot out of plotted region
+V <- data.frame(sigmab=mysb,sigmaeps=ST1$sigma_eps[mysort],sigmatime=ST1$sigma_time[mysort],name=ST1$compound[mysort],platformV=Platform)
 
-V <- data.frame(sigmab=ST1$sigma_b[mysort],sigmaeps=ST1$sigma_eps[mysort],sigmatime=ST1$sigma_time[mysort],name=ST1$compound[mysort])
 
-ggp <- (ggplot(V, aes(x=sigmaeps, y=sigmab, size=(sigmatime))) +
-          #ggtitle("Variance components")+ 
-          labs(title="Variance components",subtitle="")+
+gout <- ggplot(V, aes(x=sigmaeps, y=sigmab, size=(sigmatime))) +
+          labs(title=dynamictitle,subtitle="")+
           xlim(0,2.2)+ylim(0,2.2)+
-          geom_point(shape=21,colour="black",alpha=0.8,aes(fill=Platform))+
-          scale_fill_manual(name="Platform",values=mycols) +
+            geom_point(shape=21,colour="black",alpha=0.8,aes(fill=platformV))+
+            scale_fill_manual(name="Platform",values=mycols) +
           scale_size_continuous(range=c(0, 13)) +    # range can be used to scale the bubbles
           ylab(expression(paste("Between ",(sigma[b])))) +
           xlab(expression(paste("Noise ",(sigma[epsilon])))) +
@@ -64,27 +73,102 @@ ggp <- (ggplot(V, aes(x=sigmaeps, y=sigmab, size=(sigmatime))) +
             panel.border = element_blank()
           ) +
           guides(fill = guide_legend(override.aes = list(shape=21,size=12)))
-)
-
-
-sub <- F
-if(sub==T){pdf("Figures/subVariance.pdf");par(mfrow=c(2,2));K <- 4}else{pdf("Figures/Variance.pdf");par(mfrow=c(1,1));K <- 1}
-ggp
+print(gout)
 dev.off()
 #-----------------------------------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------------------------------
+# Fig 2: Profiles
 #-----------------------------------------------------------------------------------------------------------
-# To do: update the Supp Figure (ggp per panel)
-#-----------------------------------------------------------------------------------------------------------
-#-----------------------------------------------------------------------------------------------------------
-#-----------------------------------------------------------------------------------------------------------
-#-----------------------------------------------------------------------------------------------------------
-#-----------------------------------------------------------------------------------------------------------
-#-----------------------------------------------------------------------------------------------------------
+# prep
+numtimes  <- c(-2,-0.5,0.5,1.5,3,4,4.5,6,8,9.5,11,12)
+shortnames <- ST1$compound
+for(j in 1:nrow(ST1)){
+  if(nchar(ST1$compound[j])>30){shortnames[j] <- paste0(substr(ST1$compound[j],1,30),"...")}
+}
+
+# Some profile illustrations
+N <- 10
+agei <- 22
+bmii <- 20
+alpha <- 0.05
+
+# 4x4 plot; new version ggplot, save them separately and make 4x4 in LaTeX using minipage
 
 
 
 
+# Prolylglycine 194 (in Metab panel)
+# Lactate 206 (in Metab panel)
+
+
+# Discussion example
+#1-pnorm((0.7-mi[4])/s[4])
+#1-pnorm((2-mi[8])/s[8])
+#dnorm((2-mi[8])/s[8])/dnorm((0.7-mi[4])/s[4])
+#dnorm((2-1.41)/1.01)/dnorm((0.7+0.584)/0.415)
+#qnorm(0.9,mi[4],s[4])
+#qnorm(0.9,mi[8],s[8])
+
+# Valine (Urine) (50 in urine panel)
+
+# CD27 (1130 in protein panel)
+
+# one may do this for other ages/bmi as well (Human Baseline Tool)
+
+sel <- c(14,1,32,28) # this is sensitive, look up manually
+dynamic <- paste0("Figures/profiles",1:length(sel),".pdf")
+
+for(k in 1:length(sel)){
+pdf(dynamic[k],width=9)
+
+  j <- sel[k]
+coefs <- as.numeric(ST1[j,4:17])
+means <- coefs[-c(1,2)] + (agei)*coefs[1] + (bmii)*coefs[2]
+sds <- as.numeric(ST1[j,21:32])
+
+localpha <- max(1e-6,alpha)
+qa <- sqrt(1+1/N)*qt(1-localpha/2,df=N-1)
+high <- means + qa*sds
+low <- means-qa*sds
+
+isna <- (is.na(means)==F)
+aux <- data.frame(low=low[isna],mid=means[isna],high=high[isna],time=numtimes[isna])
+
+
+pnascol <- c(207,214,235)/256
+
+
+print(ggplot(aux,aes(x=time,y=mid))+
+  #ylab("standardized intensity")+
+    ylab("")+
+  xlab("Time (hrs) since breakfast")+
+  xlim(-2,12)+
+  ylim(-5,5)+
+  labs(title=paste0(shortnames[j]," (",ST1$panel,", ",ST1$sample[j],")"),
+       subtitle=bquote(paste(alpha,"=",.(localpha),", ","Age=",.(agei),", BMI=",.(bmii))))+
+  geom_line(aes(x=time,y=high),linetype="dashed")+
+  geom_line(aes(x=time,y=low),linetype="dashed")+
+  geom_ribbon(aes(x=time,ymax=high,ymin=low),fill=rgb(pnascol[1],pnascol[2],pnascol[3]),alpha=0)+
+  geom_segment(aes(x=time,xend=time,y=low,yend=high),size=2)+
+  geom_line(colour="black",linetype="dashed")+
+  geom_point(colour="black",size=5)+
+  theme_bw()+
+  theme(
+    axis.text=element_text(size=25),
+    axis.title=element_text(size=25),
+    plot.title = element_text(size=30,hjust = 0.5,face="bold"),
+    plot.subtitle = element_text(size=25,hjust = 0.5,face="bold"),
+    panel.border=element_blank()
+  ))
+
+
+dev.off()
+}
+
+
+
+
+
 #-----------------------------------------------------------------------------------------------------------
 
 
@@ -92,7 +176,9 @@ dev.off()
 #-----------------------------------------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------------------------------------
-# heatmap
+# Fig 3: heatmap
+# To BE UPDATED
+
 top <- (stau > quantile(stau,0.99))
 subtop <- ((1:sum(pvec))[top])[order(stau[top],decreasing=T)][1:10]
 cumsum(pvec)
@@ -148,137 +234,6 @@ text(x=-0.15+ep,y=0.65,"2",xpd=T,srt=90,cex=0.9)
 #dev.off()
 
 #-----------------------------------------------------------------------------------------------------------
-# Some profile illustrations
-N <- 10
-agei <- 22
-bmii <- 20
-
-
-# 4x4 plot
-pdf("Figures/profiles.pdf")
-par(mfrow=c(2,2))
-
-# Prolylglycine
-cj <- coeflist[[1]][194,]
-s <- slist[[1]][194,]
-nm <- namelist[[1]][194]
-
-nm <- "Prolylglycine (Metabolon, plasma)"
-
-tvec <- numtimes[which(totaltimes%in%names(cj))]
-mi <- cj[-which(names(cj)%in%c("AGE","BMI"))] + agei*cj["AGE"] + bmii*cj["BMI"]
-ca <- sqrt(1+1/N)*qt(1-alpha/2,df=N-1)
-
-plot(tvec,tvec,ylim=c(-3,4.5),ylab="",xlab="Time (hrs) since breakfeast",type="n",main=nm)
-mtext(paste0("Age =",agei,", BMI =",bmii))
-polygon(x=c(tvec,sort(tvec,decr=T)),y=c(mi-ca*s,(mi+ca*s)[order(tvec,decreasing=T)]),col="grey95",border=NA)
-abline(h=seq(-6,6,0.5),lty=3,col="grey")
-abline(v=seq(-4,12,1),lty=3,col="grey")
-segments(x0=tvec,x1=tvec,y0=mi-ca*s,y1=mi+ca*s,lwd=2)
-lines(tvec,mi,lwd=2,type="b",pch=16)
-
-# Lactate
-cj <- coeflist[[1]][206,]
-s <- slist[[1]][206,]
-nm<- namelist[[1]][206]
-nm <- "Lactate (Metabolon, plasma)"
-
-tvec <- numtimes[which(totaltimes%in%names(cj))]
-mi <- cj[-which(names(cj)%in%c("AGE","BMI"))] + agei*cj["AGE"] + bmii*cj["BMI"]
-ca <- sqrt(1+1/N)*qt(1-alpha/2,df=N-1)
-
-plot(tvec,tvec,ylim=c(-3,4.5),ylab="",xlab="Time (hrs) since breakfeast",type="n",main=nm)
-mtext(paste0("Age =",agei,", BMI =",bmii))
-polygon(x=c(tvec,sort(tvec,decr=T)),y=c(mi-ca*s,(mi+ca*s)[order(tvec,decreasing=T)]),col="grey95",border=NA)
-abline(h=seq(-6,6,0.5),lty=3,col="grey")
-abline(v=seq(-4,12,1),lty=3,col="grey")
-segments(x0=tvec,x1=tvec,y0=mi-ca*s,y1=mi+ca*s,lwd=2)
-lines(tvec,mi,lwd=2,type="b",pch=16)
-
-
-# Discussion example
-#1-pnorm((0.7-mi[4])/s[4])
-#1-pnorm((2-mi[8])/s[8])
-#dnorm((2-mi[8])/s[8])/dnorm((0.7-mi[4])/s[4])
-#dnorm((2-1.41)/1.01)/dnorm((0.7+0.584)/0.415)
-#qnorm(0.9,mi[4],s[4])
-#qnorm(0.9,mi[8],s[8])
-
-# Valine (Urine)
-cj <- coeflist[[3]][50,]
-s <- slist[[3]][50,]
-nm<- namelist[[3]][50]
-
-nm <- "Valine (BMFL, urine)"
-
-tvec <- numtimes[which(totaltimes%in%names(cj))]
-mi <- cj[-which(names(cj)%in%c("AGE","BMI"))] + agei*cj["AGE"] + bmii*cj["BMI"]
-ca <- sqrt(1+1/N)*qt(1-alpha/2,df=N-1)
-
-plot(tvec,tvec,ylim=c(-3,4.5),ylab="",xlab="Time (hrs) since breakfeast",type="n",main=nm)
-mtext(paste0("Age =",agei,", BMI =",bmii))
-polygon(x=c(tvec,sort(tvec,decr=T)),y=c(mi-ca*s,(mi+ca*s)[order(tvec,decreasing=T)]),col="grey95",border=NA)
-abline(h=seq(-6,6,0.5),lty=3,col="grey")
-abline(v=seq(-4,12,1),lty=3,col="grey")
-segments(x0=tvec,x1=tvec,y0=mi-ca*s,y1=mi+ca*s,lwd=2)
-lines(tvec,mi,lwd=2,type="b",pch=16)
-
-# Histidine (Plasma, BMFL)
-#cj <- coeflist[[2]][29,]
-#s <- slist[[2]][29,]
-#nm<- namelist[[2]][29]
-
-#tvec <- numtimes[which(totaltimes%in%names(cj))]
-#mi <- cj[-which(names(cj)%in%c("AGE","BMI"))] + agei*cj["AGE"] + bmii*cj["BMI"]
-#ca <- sqrt(1+1/N)*qt(1-alpha/2,df=N-1)
-
-#plot(tvec,tvec,ylim=c(-3,4.5),ylab="",xlab="Time (hrs) since breakfeast",type="n",main=nm)
-#mtext(paste0("Age =",agei,", BMI =",bmii))
-#polygon(x=c(tvec,sort(tvec,decr=T)),y=c(mi-ca*s,(mi+ca*s)[order(tvec,decreasing=T)]),col="grey95",border=NA)
-#abline(h=seq(-6,6,0.5),lty=3,col="grey")
-#abline(v=seq(-4,12,1),lty=3,col="grey")
-#segments(x0=tvec,x1=tvec,y0=mi-ca*s,y1=mi+ca*s,lwd=2)
-#lines(tvec,mi,lwd=2,type="b",pch=16)
-
-
-# Cytotoxic and regulatory T-cell molecule
-#cj <- coeflist[[4]][1006,]
-#s <- slist[[4]][1006,]
-#nm<- namelist[[4]][1006]
-
-#tvec <- numtimes[which(totaltimes%in%names(cj))]
-#mi <- cj[-which(names(cj)%in%c("AGE","BMI"))] + agei*cj["AGE"] + bmii*cj["BMI"]
-#ca <- sqrt(1+1/N)*qt(1-alpha/2,df=N-1)
-
-#plot(tvec,tvec,ylim=c(-3,4.5),ylab="",xlab="Time (hrs) since breakfeast",type="n",main=nm)
-#mtext(paste0("Age =",agei,", BMI =",bmii))
-#polygon(x=c(tvec,sort(tvec,decr=T)),y=c(mi-ca*s,(mi+ca*s)[order(tvec,decreasing=T)]),col="grey95",border=NA)
-#abline(h=seq(-6,6,0.5),lty=3,col="grey")
-#abline(v=seq(-4,12,1),lty=3,col="grey")
-#segments(x0=tvec,x1=tvec,y0=mi-ca*s,y1=mi+ca*s,lwd=2)
-#lines(tvec,mi,lwd=2,type="b",pch=16)
-
-# CD27
-cj <- coeflist[[4]][1130,]
-s <- slist[[4]][1130,]
-nm<- namelist[[4]][1130]
-nm <- "CD27 antigen (SomaLogic, plasma)"
-
-tvec <- numtimes[which(totaltimes%in%names(cj))]
-mi <- cj[-which(names(cj)%in%c("AGE","BMI"))] + agei*cj["AGE"] + bmii*cj["BMI"]
-ca <- sqrt(1+1/N)*qt(1-alpha/2,df=N-1)
-
-plot(tvec,tvec,ylim=c(-3,4.5),ylab="",xlab="Time (hrs) since breakfeast",type="n",main=nm)
-mtext(paste0("Age =",agei,", BMI =",bmii))
-polygon(x=c(tvec,sort(tvec,decr=T)),y=c(mi-ca*s,(mi+ca*s)[order(tvec,decreasing=T)]),col="grey95",border=NA)
-abline(h=seq(-6,6,0.5),lty=3,col="grey")
-abline(v=seq(-4,12,1),lty=3,col="grey")
-segments(x0=tvec,x1=tvec,y0=mi-ca*s,y1=mi+ca*s,lwd=2)
-lines(tvec,mi,lwd=2,type="b",pch=16)
-
-dev.off()
-
-# one may do this for other ages/bmi as well (Human Baseline Tool)
 
 #-----------------------------------------------------------------------------------------------------------
 # Advanced covariance visualisation in profile
@@ -306,19 +261,27 @@ for(r in 1:nrow(mat)){
 }
 
 lines(tgrid,apply(imat,2,function(x)quantile(x,1-alpha/2)),col="red")
-
 #-----------------------------------------------------------------------------------------------------------
-# Supp figure boxplot VC
+#-----------------------------------------------------------------------------------------------------------
+# Figure 4 (p values) in separate R file "... pvalue visuals.R"
+#-----------------------------------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------
+# Figure 5 boxplot VC
 # Repro Kim et al (2014)
-pdf("Figures/relVCbox.pdf")
+pdf("Figures/relVCbox.pdf",width=20)
+panelnames <- c("SomaLogic","Metabolon","BMFL") # C, A, B
+
 
 pi.tab <- matrix(NA,K,5)
-
-par(mfrow=c(2,2))
-for(k in 1:4) {
-  VCk <- data.frame(time=s2taulist[[k]],between=s2blist[[k]],noise=s2wlist[[k]])
-  boxplot(VCk/rowSums(VCk),ylim=c(0,1),main=paste0(histnames[k]," [",pvec[k],"]")) # relative proportions
-  pi.tab[k,] <- c(colMeans(VCk/rowSums(VCk)),median((s2blist[[k]])/((s2blist[[k]])+s2taulist[[k]]+(s2wlist[[k]]))),median((s2blist[[k]])/((s2blist[[k]])+(s2wlist[[k]]))))
+#par(mfrow=c(1,3))
+par(mfrow=c(1,3),mar=c(6,8,6,2)+0.1)
+for(k in c(2,3,1)) {
+  loc <- (ST1$panel==(panelnames[k]))
+  VCk <- data.frame(between=(ST1$sigma_b[loc])^2,time=(ST1$sigma_time[loc])^2,noise=(ST1$sigma_eps[loc])^2)
+  boxplot(VCk/rowSums(VCk),ylim=c(0,1),main="",xaxt="n",cex.axis=3) # relative proportions
+  axis(side=1,at=c(1,2,3),colnames(VCk),cex.axis=3,line=1,tick=F)
+  title(paste0((LETTERS[c(3,1,2)])[k],": ",mylabs[k]," [",sum(ST1$panel==(panelnames[k])),"]"),cex.main=4,line=3)
+  pi.tab[k,] <- c(colMeans(VCk/rowSums(VCk)),median((VCk$between)/((VCk$between)+VCk$time+VCk$noise)),median((VCk$between)/(VCk$between+VCk$noise)))
 }
 dev.off()
 
@@ -332,7 +295,9 @@ round(100*pi.tab[,c(2,1,3,4,5)],0)
 #-----------------------------------------------------------------------------------------------------------
 # Repro Maitre et al (2017)
 # ICC on urine
-pdf("Figures/ICC.pdf")
+# TO BE UPDATED
+#-----------------------------------------------------------------------------------------------------------
+#pdf("Figures/ICC.pdf")
 icccols <- c("black",cols[3],cols[5],cols[6])
 swmat<-sqrt(slist[[3]]^2-s2blist[[3]])
 ICC <- sqrt(s2blist[[3]])/(sqrt(s2blist[[3]]) + swmat)
@@ -357,10 +322,12 @@ legend(x=0.58,y=8.5,c("-2 hr","4 hr","8 hr","12 hr"),pt.bg=icccols,pch=c(1,22,21
        ncol=2,bg="white")
 
 
-dev.off()
+#dev.off()
 
+#-----------------------------------------------------------------------------------------------------------
+# TO BE UPDATED
 #Relative urine proportions
-pdf("Figures/relbars.pdf")
+#pdf("Figures/relbars.pdf")
 barcols <- c(cols[6],cols[2])
 VC <- data.frame(between=s2blist[[3]],within=s2wlist[[3]])
 rownames(VC) <- namelist[[3]]
@@ -371,13 +338,16 @@ axis(side=1,at=seq(0,1,0.2),labels=paste0(seq(0,100,20),"%"))
 dev.off()
 
 
+#-----------------------------------------------------------------------------------------------------------
+
+
+#-----------------------------------------------------------------------------------------------------------
+# this is outdated, remove this
+
+
 BMFL.id.all <- which(panels=="BMFL"&samples=="plasma") #(pvec[1]+1):(pvec[1]+pvec[2])
 #cbind(1:pvec[2],fullnames[BMFL.id.all])
 
-
-
-
-# this is outdated, remove this
 # manual! Amy has made match based on urine names, KD converted to plasma (minor loss). 38 out of 55 plasma amines BMFL measured in both
 Amy.match.plasma <- c("glycine", "serine",	"threonine",		"alanine",		"aspartate",	"asparagine",	"glutamate",		"glutamine",		"histidine",	"3-methylhistidine",
                       "lysine"	,"N6,N6,N6-trimethyllysine"	,"5-hydroxylysine",	"2-aminoadipate",	"phenylalanine",	"tyrosine",	"3-methoxytyrosine",

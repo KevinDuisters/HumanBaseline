@@ -30,10 +30,10 @@ namelist <- utlist <- coeflist <- mlist <- slist <- s2taulist <- s2blist <- s2wl
 for(k in 1:3){
   
   # localize excel sheet of paneldata
-  #D <- as.data.frame(read_xlsx("data/data.xlsx",sheet=k) )
+  D <- as.data.frame(read_xlsx("data/data.xlsx",sheet=k) )
   
   # short version for testing
-  D <- as.data.frame(read_xlsx("data/data.xlsx",sheet=k) )[,1:20]
+  #D <- as.data.frame(read_xlsx("data/data.xlsx",sheet=k) )[,1:20]
   
   
   
@@ -145,7 +145,7 @@ for(k in 1:3){
 
 #-----------------------------------------------------------------------------------------------------------
 # Store data and generate Supplemental Information result tables 
-save.now<-T
+save.now<-F
 if(save.now==T){
 
   # create file for pvalue analysis (p-value figure)

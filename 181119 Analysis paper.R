@@ -145,6 +145,13 @@ for(k in 1:3){
 
 #-----------------------------------------------------------------------------------------------------------
 # Store data and generate Supplemental Information result tables 
+
+
+pval1 <- pvallist[[1]]
+name1 <- namelist[[1]]
+ut1 <- utlist[[1]]
+save(pval1,name1,ut1,file="data/Metabnew.Rdata")
+
 save.now<-F
 if(save.now==T){
 
@@ -177,6 +184,7 @@ if(save.now==T){
   write_xlsx(ST1,"data/ST1.xlsx")
 
 }
-
+options(warn=0) # downgrade
 
 #-----------------------------------------------------------------------------------------------------------
+

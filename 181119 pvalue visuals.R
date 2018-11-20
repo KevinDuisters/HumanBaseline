@@ -67,7 +67,7 @@ signiflist[[3]] #ok now
 # Make visual
 library(RColorBrewer)
 histnames <- c("A: Plasma Metabolites","B: Urine Amines","C: Plasma Proteins")
-cols <- c("white",brewer.pal(9,"Blues")[-1],"black") # colors relative across panels
+cols <- c("white",brewer.pal(9,"Blues")[-1],"navy") 
 cx <- 3
 
 pdf("Figures/Contrasts.pdf",width=20)
@@ -81,7 +81,7 @@ for(k in 1:3){
   for(r in 1:(ni-1)){
     for(c in (r+1):(ni)){
       polygon(x=c(-1.5+c,-0.5+c,-0.5+c,-1.5+c,-1.5+c),y=c(-0.5+r,-0.5+r,0.5+r,0.5+r,-0.5+r),col=
-                cols[sum( (0:10)/10 <= 2*sm[r,c]/pvec[k])]) # multiplied by 2: range up to 50%
+                cols[sum( (0:10)/10 <= 3.33*sm[r,c]/pvec[k])]) # multiplied by 3.33: range up to 30%
     }}
   short.hrs <- sapply(colnames(sm),function(s)substr(s,1,nchar(s)-3))
   title(paste0(histnames[k]," [",pvec[k],"]"),cex.main=4,line=3)
@@ -105,6 +105,6 @@ for(j in 1:length(cols)){
 }
 text(x=0.45,y=0.6,"% significant biochemicals in panel",cex=cx)
 text(x=xc-0.05,y=yc+0.05,"0 %",cex=cx)
-text(x=xc+length(cols)*0.05+0.07,y=yc+0.05,"50 %",cex=cx)
+text(x=xc+length(cols)*0.05+0.07,y=yc+0.05,"30 %",cex=cx)
 dev.off()
 
